@@ -31,10 +31,7 @@ async function readOrders() {
 }
 
 async function saveOrders(orders) {
-  await fs.writeFile(
-    ORDERS_FILE,
-    JSON.stringify(orders, null, 2)
-  );
+  await fs.writeFile(ORDERS_FILE, JSON.stringify(orders, null, 2));
 }
 
 function adminAuth(req, res, next) {
@@ -53,13 +50,9 @@ function buildSummary(orders) {
   let text = `Order ของวันพรุ่งนี้\n\n`;
 
   for (const meal of meals) {
-    const rice = orders.filter(
-      (o) => o.meal === meal && o.type === "ข้าว"
-    );
+    const rice = orders.filter((o) => o.meal === meal && o.type === "ข้าว");
 
-    const side = orders.filter(
-      (o) => o.meal === meal && o.type === "กับ"
-    );
+    const side = orders.filter((o) => o.meal === meal && o.type === "กับ");
 
     text += `========== ${meal} ==========\n\n`;
 
@@ -107,206 +100,142 @@ app.get("/webhook", (req, res) => {
 // LINE Webhook
 // ===================
 
-app.post(
-  "/webhook",
-  line.middleware(config),
-  async (req, res) => {
-    try {
-      const events = req.body.events;
+app.post("/webhook", line.middleware(config), async (req, res) => {
+  try {
+    const events = req.body.events;
 
-      const validMeals = [
-        "เช้า",
-        "กลางวัน",
-        "เย็น",
-      ];
+    const validMeals = ["เช้า", "กลางวัน", "เย็น"];
 
-      const validTypes = [
-        "ข้าว",
-        "กับ",
-      ];
+    const validTypes = ["ข้าว", "กับ"];
 
-      for (const event of events) {
-        if (event.type !== "message") continue;
-        if (event.message.type !== "text") continue;
+    for (const event of events) {
+      if (event.type !== "message") continue;
+      if (event.message.type !== "text") continue;
 
-        const text = event.message.text.trim();
+      const text = event.message.text.trim();
 
-        const parts = text
-          .split("|")
-          .map((x) => x.trim());
+      const parts = text.split("|").map((x) => x.trim());
 
-        // format:
-        // เช้า|กะเพราหมู|ข้าว
+      // format:
+      // เช้า|กะเพราหมู|ข้าว
 
-        if (parts.length !== 3) continue;
+      if (parts.length !== 3) continue;
 
-        const [meal, menu, type] = parts;
+      const [meal, menu, type] = parts;
 
-        if (
-          !validMeals.includes(meal) ||
-          !validTypes.includes(type)
-        ) {
-          continue;
-        }
-
-        const userId =
-          event.source.userId;
-
-        const groupId =
-          event.source.groupId;
-
-        let name = "Unknown";
-
-        try {
-          const profile =
-            await client.getGroupMemberProfile(
-              groupId,
-              userId
-            );
-
-          name = profile.displayName;
-        } catch (err) {
-          console.log(
-            "cannot get profile"
-          );
-        }
-
-        const orders =
-          await readOrders();
-
-        orders.push({
-          meal,
-          menu,
-          type,
-          name,
-          userId,
-          groupId,
-          createdAt:
-            new Date().toISOString(),
-        });
-
-        await saveOrders(orders);
-
-        console.log(
-          `saved: ${name} ${menu}`
-        );
+      if (!validMeals.includes(meal) || !validTypes.includes(type)) {
+        continue;
       }
 
-      res.sendStatus(200);
-    } catch (err) {
-      console.error(err);
-      res.sendStatus(500);
+      const userId = event.source.userId;
+
+      const groupId = event.source.groupId;
+
+      let name = "Unknown";
+
+      try {
+        const profile = await client.getGroupMemberProfile(groupId, userId);
+
+        name = profile.displayName;
+      } catch (err) {
+        console.log("cannot get profile");
+      }
+
+      const orders = await readOrders();
+
+      orders.push({
+        meal,
+        menu,
+        type,
+        name,
+        userId,
+        groupId,
+        createdAt: new Date().toISOString(),
+      });
+
+      await saveOrders(orders);
+
+      console.log(`saved: ${name} ${menu}`);
     }
+
+    res.sendStatus(200);
+  } catch (err) {
+    console.error(err);
+    res.sendStatus(500);
   }
-);
+});
 
 // ===================
 // Debug Routes
 // ===================
 
-app.get(
-  "/orders",
-  adminAuth,
-  async (req, res) => {
-    const orders =
-      await readOrders();
+app.get("/orders", adminAuth, async (req, res) => {
+  const orders = await readOrders();
 
-    res.json(orders);
-  }
-);
+  res.json(orders);
+});
 
-app.get(
-  "/summary",
-  adminAuth,
-  async (req, res) => {
-    const orders =
-      await readOrders();
+app.get("/summary", adminAuth, async (req, res) => {
+  const orders = await readOrders();
 
-    res.send(
-      buildSummary(orders)
-    );
-  }
-);
+  res.send(buildSummary(orders));
+});
 
-app.delete(
-  "/orders",
-  adminAuth,
-  async (req, res) => {
-    await saveOrders([]);
+app.delete("/orders", adminAuth, async (req, res) => {
+  await saveOrders([]);
 
-    res.json({
-      success: true,
-    });
-  }
-);
+  res.json({
+    success: true,
+  });
+});
 
 // ===================
 // Daily Summary
 // ===================
 
-cron.schedule(
-  "0 23 * * *",
-  async () => {
-    try {
-      const orders =
-        await readOrders();
+cron.schedule("0 23 * * *", async () => {
+  try {
+    const orders = await readOrders();
 
-      if (
-        !orders ||
-        orders.length === 0
-      ) {
-        console.log(
-          "No orders today"
-        );
-        return;
-      }
-
-      const summary =
-        buildSummary(orders);
-
-      const groupId =
-        orders[0].groupId;
-
-      await client.pushMessage(
-        groupId,
-        {
-          type: "text",
-          text: summary,
-        }
-      );
-
-      await saveOrders([]);
-
-      console.log(
-        "Summary sent"
-      );
-    } catch (err) {
-      console.error(err);
+    if (!orders || orders.length === 0) {
+      console.log("No orders today");
+      return;
     }
+
+    const summary = buildSummary(orders);
+
+    const groupId = orders[0].groupId;
+
+    await client.pushMessage(groupId, {
+      type: "text",
+      text: summary,
+    });
+
+    await saveOrders([]);
+
+    console.log("Summary sent");
+  } catch (err) {
+    console.error(err);
   }
-);
+});
 
 // ===================
 // Error Handler
 // ===================
 
-app.use(
-  (err, req, res, next) => {
-    console.error(err);
-    res
-      .status(500)
-      .send(
-        "Internal Server Error"
-      );
-  }
-);
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).send("Internal Server Error");
+});
+
+console.log("SECRET:", process.env.LINE_CHANNEL_SECRET);
+
+console.log("TOKEN:", process.env.LINE_CHANNEL_ACCESS_TOKEN);
 
 // ===================
 // Start
 // ===================
 
 app.listen(PORT, () => {
-  console.log(
-    `Server running on port ${PORT}`
-  );
+  console.log(`Server running on port ${PORT}`);
 });
