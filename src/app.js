@@ -1,6 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
-import line from "@line/bot-sdk";
+import * as line from "@line/bot-sdk";
 import { handleEvent } from "./bot.js";
 import { cleanup } from "./orderStore.js";
 
