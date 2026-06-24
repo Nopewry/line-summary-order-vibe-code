@@ -6,14 +6,12 @@ const app = express();
 
 app.use(express.json());
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const ORDERS_FILE = "./orders.json";
 
-const line = require("@line/bot-sdk");
-
-// -------------------
+// ===================
 // Helper
-// -------------------
+// ===================
 
 async function readOrders() {
   try {
@@ -38,11 +36,11 @@ function buildSummary(orders) {
 
   for (const meal of meals) {
     const rice = orders.filter(
-      o => o.meal === meal && o.type === "ข้าว"
+      (o) => o.meal === meal && o.type === "ข้าว"
     );
 
     const side = orders.filter(
-      o => o.meal === meal && o.type === "กับ"
+      (o) => o.meal === meal && o.type === "กับ"
     );
 
     text += `========== ${meal} ==========\n\n`;
@@ -52,7 +50,7 @@ function buildSummary(orders) {
     if (rice.length === 0) {
       text += "- ไม่มีรายการ\n";
     } else {
-      rice.forEach(order => {
+      rice.forEach((order) => {
         text += `• ${order.menu} - ${order.name}\n`;
       });
     }
@@ -64,7 +62,7 @@ function buildSummary(orders) {
     if (side.length === 0) {
       text += "- ไม่มีรายการ\n";
     } else {
-      side.forEach(order => {
+      side.forEach((order) => {
         text += `• ${order.menu} - ${order.name}\n`;
       });
     }
@@ -75,9 +73,32 @@ function buildSummary(orders) {
   return text;
 }
 
-// -------------------
+// ===================
+// Health Check
+// ===================
+
+app.get("/", (req, res) => {
+  res.send("OK");
+});
+
+app.get("/webhook", (req, res) => {
+  res.send("WEBHOOK READY");
+});
+
+// ===================
+// LINE Webhook
+// ===================
+
+app.post("/webhook", async (req, res) => {
+  console.log("========== LINE WEBHOOK ==========");
+  console.log(JSON.stringify(req.body, null, 2));
+
+  res.sendStatus(200);
+});
+
+// ===================
 // Create Order
-// -------------------
+// ===================
 
 app.post("/order", async (req, res) => {
   try {
@@ -86,7 +107,7 @@ app.post("/order", async (req, res) => {
     if (!meal || !name || !menu || !type) {
       return res.status(400).json({
         success: false,
-        message: "Missing required fields"
+        message: "Missing required fields",
       });
     }
 
@@ -97,26 +118,26 @@ app.post("/order", async (req, res) => {
       name,
       menu,
       type,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     });
 
     await saveOrders(orders);
 
     res.json({
-      success: true
+      success: true,
     });
   } catch (err) {
     console.error(err);
 
     res.status(500).json({
-      success: false
+      success: false,
     });
   }
 });
 
-// -------------------
-// Get Summary
-// -------------------
+// ===================
+// Summary
+// ===================
 
 app.get("/summary", async (req, res) => {
   const orders = await readOrders();
@@ -126,21 +147,21 @@ app.get("/summary", async (req, res) => {
   res.send(summary);
 });
 
-// -------------------
+// ===================
 // Clear Orders
-// -------------------
+// ===================
 
 app.delete("/orders", async (req, res) => {
   await saveOrders([]);
 
   res.json({
-    success: true
+    success: true,
   });
 });
 
-// -------------------
-// Cron 23:00
-// -------------------
+// ===================
+// Cron
+// ===================
 
 cron.schedule("0 23 * * *", async () => {
   const orders = await readOrders();
@@ -156,60 +177,9 @@ cron.schedule("0 23 * * *", async () => {
   console.log("Orders cleared.");
 });
 
-const config = {
-  channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
-  channelSecret: process.env.LINE_CHANNEL_SECRET
-};
-
-const client = new line.Client(config);
-
-
-app.post("/webhook", line.middleware(config), async (req, res) => {
-  const events = req.body.events;
-
-  for (const event of events) {
-    if (event.type !== "message") continue;
-    if (event.message.type !== "text") continue;
-
-    const text = event.message.text;
-
-    // format: เช้า|หมูทอด|ข้าว
-    const parts = text.split("|").map(t => t.trim());
-
-    if (parts.length !== 3) continue;
-
-    const [meal, menu, type] = parts;
-
-    const userId = event.source.userId;
-
-    let name = "unknown";
-
-    try {
-      const profile = await client.getProfile(userId);
-      name = profile.displayName;
-    } catch (e) {}
-
-    const orders = await readOrders();
-
-    orders.push({
-      meal,
-      menu,
-      type,
-      name,
-      userId,
-      createdAt: new Date().toISOString()
-    });
-
-    await saveOrders(orders);
-  }
-
-  res.sendStatus(200);
-});
-
-
-// -------------------
+// ===================
 // Start Server
-// -------------------
+// ===================
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
