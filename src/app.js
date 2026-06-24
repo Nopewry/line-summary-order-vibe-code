@@ -36,6 +36,9 @@ app.get("/", (_, res) => {
   res.send("LINE Order Bot is running");
 });
 
+console.log("CHANNEL_SECRET =", process.env.CHANNEL_SECRET);
+console.log("CHANNEL_ACCESS_TOKEN =", process.env.CHANNEL_ACCESS_TOKEN);
+
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log("Server running on port", port);
