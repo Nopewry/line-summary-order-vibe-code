@@ -9,6 +9,8 @@ app.use(express.json());
 const PORT = 3000;
 const ORDERS_FILE = "./orders.json";
 
+const line = require("@line/bot-sdk");
+
 // -------------------
 // Helper
 // -------------------
@@ -153,6 +155,57 @@ cron.schedule("0 23 * * *", async () => {
 
   console.log("Orders cleared.");
 });
+
+const config = {
+  channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
+  channelSecret: process.env.LINE_CHANNEL_SECRET
+};
+
+const client = new line.Client(config);
+
+
+app.post("/webhook", line.middleware(config), async (req, res) => {
+  const events = req.body.events;
+
+  for (const event of events) {
+    if (event.type !== "message") continue;
+    if (event.message.type !== "text") continue;
+
+    const text = event.message.text;
+
+    // format: เช้า|หมูทอด|ข้าว
+    const parts = text.split("|").map(t => t.trim());
+
+    if (parts.length !== 3) continue;
+
+    const [meal, menu, type] = parts;
+
+    const userId = event.source.userId;
+
+    let name = "unknown";
+
+    try {
+      const profile = await client.getProfile(userId);
+      name = profile.displayName;
+    } catch (e) {}
+
+    const orders = await readOrders();
+
+    orders.push({
+      meal,
+      menu,
+      type,
+      name,
+      userId,
+      createdAt: new Date().toISOString()
+    });
+
+    await saveOrders(orders);
+  }
+
+  res.sendStatus(200);
+});
+
 
 // -------------------
 // Start Server
