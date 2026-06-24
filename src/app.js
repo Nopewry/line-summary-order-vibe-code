@@ -31,27 +31,36 @@ app.post("/test", (req, res) => {
   res.sendStatus(200);
 });
 
+// app.post("/webhook", middleware, async (req, res) => {
+//   console.log("🔥 WEBHOOK HIT");
+
+//   try {
+//     const events = req.body?.events || [];
+
+//     for (const event of events) {
+//       try {
+//         console.log("📩 EVENT:", event.type);
+
+//         await handleEvent(event);
+//       } catch (err) {
+//         console.error("❌ handleEvent ERROR:", err);
+//       }
+//     }
+
+//     return res.sendStatus(200);
+//   } catch (err) {
+//     console.error("❌ WEBHOOK FATAL:", err);
+//     return res.sendStatus(200); // สำคัญ: ห้ามให้ LINE เห็น 500
+//   }
+// });
+
 app.post("/webhook", middleware, async (req, res) => {
   console.log("🔥 WEBHOOK HIT");
+  console.log(
+    JSON.stringify(req.body, null, 2)
+  );
 
-  try {
-    const events = req.body?.events || [];
-
-    for (const event of events) {
-      try {
-        console.log("📩 EVENT:", event.type);
-
-        await handleEvent(event);
-      } catch (err) {
-        console.error("❌ handleEvent ERROR:", err);
-      }
-    }
-
-    return res.sendStatus(200);
-  } catch (err) {
-    console.error("❌ WEBHOOK FATAL:", err);
-    return res.sendStatus(200); // สำคัญ: ห้ามให้ LINE เห็น 500
-  }
+  return res.sendStatus(200);
 });
 
 startCron(client, () => latestGroupId);
