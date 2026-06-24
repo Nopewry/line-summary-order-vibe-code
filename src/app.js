@@ -1,45 +1,64 @@
 import express from "express";
 import dotenv from "dotenv";
 import * as line from "@line/bot-sdk";
+
 import { handleEvent } from "./bot.js";
-import { cleanup } from "./orderStore.js";
+import { startCron } from "./cron.js";
 
 dotenv.config();
 
 const app = express();
 
-console.log("CHANNEL_SECRET =", process.env.CHANNEL_SECRET);
-console.log("CHANNEL_ACCESS_TOKEN =", process.env.CHANNEL_ACCESS_TOKEN);
-
 const config = {
   channelSecret: process.env.CHANNEL_SECRET,
-  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN
+  channelAccessToken:
+    process.env.CHANNEL_ACCESS_TOKEN
 };
 
-const client = new line.messagingApi.MessagingApiClient({
-  channelAccessToken: config.channelAccessToken
-});
+const client =
+  new line.messagingApi.MessagingApiClient({
+    channelAccessToken:
+      config.channelAccessToken
+  });
 
-const middleware = line.middleware(config);
+const middleware =
+  line.middleware(config);
 
-// cleanup memory ทุก 10 นาที
-setInterval(() => cleanup(), 10 * 60 * 1000);
+let latestGroupId = null;
 
-app.post("/webhook", middleware, async (req, res) => {
-  try {
-    await Promise.all(req.body.events.map(e => handleEvent(e, client)));
-    res.status(200).end();
-  } catch (err) {
-    console.error(err);
-    res.status(500).end();
+app.post(
+  "/webhook",
+  middleware,
+  async (req, res) => {
+    for (const event of req.body.events) {
+      if (
+        event.source?.type === "group"
+      ) {
+        latestGroupId =
+          event.source.groupId;
+      }
+
+      await handleEvent(event);
+    }
+
+    res.sendStatus(200);
   }
-});
+);
+
+startCron(
+  client,
+  () => latestGroupId
+);
 
 app.get("/", (_, res) => {
-  res.send("LINE Order Bot is running");
+  res.send("OK");
 });
 
-const port = process.env.PORT || 3000;
+const port =
+  process.env.PORT || 3000;
+
 app.listen(port, () => {
-  console.log("Server running on port", port);
+  console.log(
+    `Server running on ${port}`
+  );
 });

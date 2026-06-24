@@ -1,17 +1,23 @@
-export function parseMessage(text) {
-  const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
+export function parseOrders(text) {
+  const lines = text
+    .split("\n")
+    .map(x => x.trim())
+    .filter(Boolean);
 
-  const items = [];
+  const orders = [];
 
   for (const line of lines) {
-    const match = line.match(/(.+?)\s+(\d+)$/);
-    if (!match) continue;
+    const parts = line.split("|").map(x => x.trim());
 
-    items.push({
-      name: match[1].trim(),
-      qty: Number(match[2])
+    if (parts.length !== 4) continue;
+
+    orders.push({
+      customerName: parts[0],
+      meal: parts[1],
+      orderType: parts[2],
+      menu: parts[3]
     });
   }
 
-  return items;
+  return orders;
 }
