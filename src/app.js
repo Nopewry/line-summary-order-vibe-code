@@ -9,7 +9,8 @@ dotenv.config();
 
 const app = express();
 
-console.log("🔥 SERVER STARTED");
+// 🔥 MUST HAVE THIS
+app.use(express.json());
 
 const config = {
   channelSecret: process.env.CHANNEL_SECRET,
@@ -24,21 +25,16 @@ const middleware = line.middleware(config);
 
 let latestGroupId = null;
 
-// 🔥 DEBUG middleware error
-app.use((err, req, res, next) => {
-  console.error("🔥 GLOBAL ERROR:", err);
-  next(err);
-});
-
-app.post("/webhook", async (req, res) => {
+app.post("/webhook", middleware, async (req, res) => {
   console.log("🔥 WEBHOOK HIT");
-  console.log("📦 BODY:", JSON.stringify(req.body, null, 2));
+  console.log("📦 BODY:", req.body);
 
   try {
-    const events = req.body?.events || [];
+    const events = req.body.events;
 
-    if (!events.length) {
+    if (!events || events.length === 0) {
       console.log("⚠️ No events");
+      return res.sendStatus(200);
     }
 
     for (const event of events) {
@@ -46,20 +42,14 @@ app.post("/webhook", async (req, res) => {
 
       if (event.source?.type === "group") {
         latestGroupId = event.source.groupId;
-        console.log("👥 Group ID:", latestGroupId);
       }
 
-      try {
-        await handleEvent(event);
-        console.log("✅ handleEvent success");
-      } catch (err) {
-        console.error("❌ handleEvent error:", err);
-      }
+      await handleEvent(event);
     }
 
     res.sendStatus(200);
   } catch (err) {
-    console.error("❌ WEBHOOK FATAL:", err);
+    console.error("❌ ERROR:", err);
     res.sendStatus(500);
   }
 });
@@ -70,8 +60,6 @@ app.get("/", (_, res) => {
   res.send("OK");
 });
 
-const port = process.env.PORT || 3000;
-
-app.listen(port, () => {
-  console.log(`Server running on ${port}`);
+app.listen(process.env.PORT || 3000, () => {
+  console.log("Server running");
 });
