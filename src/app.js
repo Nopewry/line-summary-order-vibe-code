@@ -9,6 +9,8 @@ dotenv.config();
 
 const app = express();
 
+console.log("🔥 SERVER STARTED");
+
 const config = {
   channelSecret: process.env.CHANNEL_SECRET,
   channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
@@ -28,7 +30,7 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
-app.post("/webhook", middleware, async (req, res) => {
+app.post("/webhook", async (req, res) => {
   console.log("🔥 WEBHOOK HIT");
   console.log("📦 BODY:", JSON.stringify(req.body, null, 2));
 
