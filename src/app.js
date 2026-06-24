@@ -10,7 +10,7 @@ dotenv.config();
 const app = express();
 
 // 🔥 MUST HAVE THIS
-app.use(express.json());
+// app.use(express.json());
 
 const config = {
   channelSecret: process.env.CHANNEL_SECRET,
