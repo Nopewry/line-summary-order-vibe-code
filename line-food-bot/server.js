@@ -1,6 +1,7 @@
 const express = require("express");
 const fs = require("fs/promises");
 const cron = require("node-cron");
+const line = require("@line/bot-sdk");
 
 const app = express();
 
@@ -9,8 +10,15 @@ app.use(express.json());
 const PORT = process.env.PORT || 3000;
 const ORDERS_FILE = "./orders.json";
 
+const config = {
+  channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
+  channelSecret: process.env.LINE_CHANNEL_SECRET,
+};
+
+const client = new line.Client(config);
+
 // ===================
-// Helper
+// Helpers
 // ===================
 
 async function readOrders() {
@@ -27,6 +35,16 @@ async function saveOrders(orders) {
     ORDERS_FILE,
     JSON.stringify(orders, null, 2)
   );
+}
+
+function adminAuth(req, res, next) {
+  const key = req.headers["x-admin-key"];
+
+  if (key !== process.env.ADMIN_KEY) {
+    return res.sendStatus(401);
+  }
+
+  next();
 }
 
 function buildSummary(orders) {
@@ -89,98 +107,206 @@ app.get("/webhook", (req, res) => {
 // LINE Webhook
 // ===================
 
-app.post("/webhook", async (req, res) => {
-  console.log("========== LINE WEBHOOK ==========");
-  console.log(JSON.stringify(req.body, null, 2));
+app.post(
+  "/webhook",
+  line.middleware(config),
+  async (req, res) => {
+    try {
+      const events = req.body.events;
 
-  res.sendStatus(200);
-});
+      const validMeals = [
+        "เช้า",
+        "กลางวัน",
+        "เย็น",
+      ];
 
-// ===================
-// Create Order
-// ===================
+      const validTypes = [
+        "ข้าว",
+        "กับ",
+      ];
 
-app.post("/order", async (req, res) => {
-  try {
-    const { meal, name, menu, type } = req.body;
+      for (const event of events) {
+        if (event.type !== "message") continue;
+        if (event.message.type !== "text") continue;
 
-    if (!meal || !name || !menu || !type) {
-      return res.status(400).json({
-        success: false,
-        message: "Missing required fields",
-      });
+        const text = event.message.text.trim();
+
+        const parts = text
+          .split("|")
+          .map((x) => x.trim());
+
+        // format:
+        // เช้า|กะเพราหมู|ข้าว
+
+        if (parts.length !== 3) continue;
+
+        const [meal, menu, type] = parts;
+
+        if (
+          !validMeals.includes(meal) ||
+          !validTypes.includes(type)
+        ) {
+          continue;
+        }
+
+        const userId =
+          event.source.userId;
+
+        const groupId =
+          event.source.groupId;
+
+        let name = "Unknown";
+
+        try {
+          const profile =
+            await client.getGroupMemberProfile(
+              groupId,
+              userId
+            );
+
+          name = profile.displayName;
+        } catch (err) {
+          console.log(
+            "cannot get profile"
+          );
+        }
+
+        const orders =
+          await readOrders();
+
+        orders.push({
+          meal,
+          menu,
+          type,
+          name,
+          userId,
+          groupId,
+          createdAt:
+            new Date().toISOString(),
+        });
+
+        await saveOrders(orders);
+
+        console.log(
+          `saved: ${name} ${menu}`
+        );
+      }
+
+      res.sendStatus(200);
+    } catch (err) {
+      console.error(err);
+      res.sendStatus(500);
     }
+  }
+);
 
-    const orders = await readOrders();
+// ===================
+// Debug Routes
+// ===================
 
-    orders.push({
-      meal,
-      name,
-      menu,
-      type,
-      createdAt: new Date().toISOString(),
-    });
+app.get(
+  "/orders",
+  adminAuth,
+  async (req, res) => {
+    const orders =
+      await readOrders();
 
-    await saveOrders(orders);
+    res.json(orders);
+  }
+);
+
+app.get(
+  "/summary",
+  adminAuth,
+  async (req, res) => {
+    const orders =
+      await readOrders();
+
+    res.send(
+      buildSummary(orders)
+    );
+  }
+);
+
+app.delete(
+  "/orders",
+  adminAuth,
+  async (req, res) => {
+    await saveOrders([]);
 
     res.json({
       success: true,
     });
-  } catch (err) {
-    console.error(err);
-
-    res.status(500).json({
-      success: false,
-    });
   }
-});
+);
 
 // ===================
-// Summary
+// Daily Summary
 // ===================
 
-app.get("/summary", async (req, res) => {
-  const orders = await readOrders();
+cron.schedule(
+  "0 23 * * *",
+  async () => {
+    try {
+      const orders =
+        await readOrders();
 
-  const summary = buildSummary(orders);
+      if (
+        !orders ||
+        orders.length === 0
+      ) {
+        console.log(
+          "No orders today"
+        );
+        return;
+      }
 
-  res.send(summary);
-});
+      const summary =
+        buildSummary(orders);
+
+      const groupId =
+        orders[0].groupId;
+
+      await client.pushMessage(
+        groupId,
+        {
+          type: "text",
+          text: summary,
+        }
+      );
+
+      await saveOrders([]);
+
+      console.log(
+        "Summary sent"
+      );
+    } catch (err) {
+      console.error(err);
+    }
+  }
+);
 
 // ===================
-// Clear Orders
+// Error Handler
 // ===================
 
-app.delete("/orders", async (req, res) => {
-  await saveOrders([]);
-
-  res.json({
-    success: true,
-  });
-});
-
-// ===================
-// Cron
-// ===================
-
-cron.schedule("0 23 * * *", async () => {
-  const orders = await readOrders();
-
-  const summary = buildSummary(orders);
-
-  console.log("\n");
-  console.log("===== DAILY SUMMARY =====");
-  console.log(summary);
-
-  await saveOrders([]);
-
-  console.log("Orders cleared.");
-});
+app.use(
+  (err, req, res, next) => {
+    console.error(err);
+    res
+      .status(500)
+      .send(
+        "Internal Server Error"
+      );
+  }
+);
 
 // ===================
-// Start Server
+// Start
 // ===================
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(
+    `Server running on port ${PORT}`
+  );
 });
