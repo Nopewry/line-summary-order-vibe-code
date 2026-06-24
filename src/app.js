@@ -8,6 +8,9 @@ dotenv.config();
 
 const app = express();
 
+console.log("CHANNEL_SECRET =", process.env.CHANNEL_SECRET);
+console.log("CHANNEL_ACCESS_TOKEN =", process.env.CHANNEL_ACCESS_TOKEN);
+
 const config = {
   channelSecret: process.env.CHANNEL_SECRET,
   channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN
@@ -35,9 +38,6 @@ app.post("/webhook", middleware, async (req, res) => {
 app.get("/", (_, res) => {
   res.send("LINE Order Bot is running");
 });
-
-console.log("CHANNEL_SECRET =", process.env.CHANNEL_SECRET);
-console.log("CHANNEL_ACCESS_TOKEN =", process.env.CHANNEL_ACCESS_TOKEN);
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
