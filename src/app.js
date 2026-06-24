@@ -26,31 +26,23 @@ const middleware = line.middleware(config);
 let latestGroupId = null;
 
 app.post("/webhook", middleware, async (req, res) => {
-  console.log("🔥 WEBHOOK HIT");
-  console.log("📦 BODY:", req.body);
-
   try {
-    const events = req.body.events;
+    console.log("🔥 WEBHOOK HIT");
 
-    if (!events || events.length === 0) {
-      console.log("⚠️ No events");
-      return res.sendStatus(200);
-    }
+    const events = req.body?.events || [];
 
     for (const event of events) {
-      console.log("📩 EVENT:", event.type);
-
-      if (event.source?.type === "group") {
-        latestGroupId = event.source.groupId;
+      try {
+        await handleEvent(event);
+      } catch (err) {
+        console.error("❌ handleEvent failed:", err);
       }
-
-      await handleEvent(event);
     }
 
     res.sendStatus(200);
   } catch (err) {
-    console.error("❌ ERROR:", err);
-    res.sendStatus(500);
+    console.error("❌ WEBHOOK CRASH:", err);
+    res.sendStatus(200); // สำคัญ: ห้ามให้ LINE เห็น 500
   }
 });
 
