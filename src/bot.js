@@ -310,13 +310,6 @@ export async function handleEvent(event) {
       VALUES (?, ?, ?, ?, ?)
     `);
 
-    await addOrder({
-      groupId: event.source.groupId,
-      customerName: orders.customerName,
-      meal: orders.meal,
-      menu: orders.menu,
-    });
-
     console.log("💾 INSERTING ORDER");
     
     const validMeals = ["เช้า", "กลางวัน", "เย็น"];
@@ -345,6 +338,13 @@ export async function handleEvent(event) {
         "-",
         order.menu
       );
+
+        await addOrder({
+          groupId: event.source.groupId,
+          customerName: order.customerName,
+          meal: order.meal,
+          menu: order.menu,
+        });
     }
 
     // const rows = db
