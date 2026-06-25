@@ -58,7 +58,7 @@ export async function handleEvent(event) {
     }
 
     const cancelMatch = text.match(
-      /^(.+?)\s*\-\s*ยกเลิก$/i
+      /^(.+?)\s*\/\s*ยกเลิก$/i
     );
 
     if (cancelMatch) {
@@ -104,7 +104,7 @@ export async function handleEvent(event) {
     }
 
     const viewMatch = text.match(
-      /^(.+?)\s*\-\s*ดู$/i
+      /^(.+?)\s*\/\s*ดู$/i
     );
 
     if (viewMatch) {
@@ -139,8 +139,7 @@ export async function handleEvent(event) {
       orders.forEach((order, index) => {
         text +=
           `${index + 1}. ` +
-          `${order.meal} | ` +
-          `${order.order_type} | ` +
+          `${order.meal} / ` +
           `${order.menu}\n`;
       });
 
@@ -158,7 +157,7 @@ export async function handleEvent(event) {
     }
 
     const deleteMatch = text.match(
-      /^ลบ\s*\-\s*(.+?)\s*\-\s*(\d+)$/i
+      /^ลบ\s*\/\s*(.+?)\s*\/\s*(\d+)$/i
     );
 
     if (deleteMatch) {
@@ -215,7 +214,7 @@ export async function handleEvent(event) {
     }
 
     const editMatch = text.match(
-      /^แก้\s*\-\s*(.+?)\s*\-\s*(\d+)\s*\-\s*(.+?)\s*\-\s*(.+?)\s*\-\s*(.+)$/i
+      /^แก้\s*\/\s*(.+?)\s*\/\s*(\d+)\s*\/\s*(.+?)\s*\/\s*(.+?)\s*\/\s*(.+)$/i
     );
 
     if (editMatch) {
@@ -316,7 +315,7 @@ export async function handleEvent(event) {
         event.source.groupId,
         order.customerName,
         order.meal,
-        order.orderType,
+        "-",
         order.menu
       );
     }

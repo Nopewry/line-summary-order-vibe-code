@@ -7,27 +7,14 @@ export function generateSummary(orders) {
   for (const meal of meals) {
     text += `*********************\n🍽 ${meal}\n*********************\n\n`;
 
-    const riceOrders = orders.filter(
+    const orders = orders.filter(
       o =>
-        o.meal === meal &&
-        o.order_type === "พร้อมข้าว"
+        o.meal === meal
     );
 
-    const sideOrders = orders.filter(
-      o =>
-        o.meal === meal &&
-        o.order_type === "กับข้าว"
-    );
+    text += "🍚 เมนูนะจว๊ะ\n";
 
-    text += "🍚 พร้อมข้าว\n";
-
-    for (const item of riceOrders) {
-      text += `• ${item.menu} - ${item.customer_name}\n`;
-    }
-
-    text += "\n🍱 กับข้าว\n";
-
-    for (const item of sideOrders) {
+    for (const item of orders) {
       text += `• ${item.menu} - ${item.customer_name}\n`;
     }
 

@@ -7,14 +7,13 @@ export function parseOrders(text) {
   const orders = [];
 
   for (const line of lines) {
-    const parts = line.split("-").map(x => x.trim());
+    const parts = line.split("/").map(x => x.trim());
 
-    if (parts.length !== 4) continue;
+    if (parts.length !== 3) continue;
 
     orders.push({
       customerName: parts[0],
       meal: parts[1],
-      orderType: parts[2],
       menu: parts[3]
     });
   }
