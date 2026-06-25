@@ -1,6 +1,11 @@
 import Database from "better-sqlite3";
 
-const db = new Database("data/orders.db");
+const dbPath = "data/orders.db";
+
+console.log("DB PATH =", dbPath);
+console.log("CWD =", process.cwd());
+
+const db = new Database(dbPath);
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS orders (

@@ -43,6 +43,14 @@ export async function handleEvent(event) {
         order.menu
       );
     }
+
+    const rows = db
+    .prepare("SELECT * FROM orders")
+    .all();
+
+    console.log("📦 ROWS IN DB");
+    console.log(rows);
+
     console.log("✅ DB INSERT SUCCESS");
   } catch (err) {
     console.error("BOT ERROR:", err);
