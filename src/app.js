@@ -34,6 +34,10 @@ app.post("/webhook", middleware, async (req, res) => {
   console.log("🔥 WEBHOOK HIT");
 
   for (const event of req.body.events) {
+      console.log(
+        "GROUP ID =",
+        event.source?.groupId
+      );  
     console.log("BEFORE handleEvent");
 
     await handleEvent(event);
