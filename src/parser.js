@@ -14,7 +14,7 @@ export function parseOrders(text) {
     orders.push({
       customerName: parts[0],
       meal: parts[1],
-      menu: parts[3]
+      menu: parts[2]
     });
   }
 
