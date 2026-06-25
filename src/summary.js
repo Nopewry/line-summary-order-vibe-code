@@ -14,7 +14,7 @@ export function generateSummary(orders) {
 
     text += "🍚 เมนูนะจว๊ะ\n";
 
-    for (const item of orders) {
+    for (const item of mealOrders) {
       text += `• ${item.menu} - ${item.customer_name}\n`;
     }
 
