@@ -3,6 +3,8 @@ import { parseOrders } from "./parser.js";
 import * as line from "@line/bot-sdk";
 import { generateSummary } from "./summary.js";
 
+import { addOrder } from "./sheet.js";
+
 const client =
   new line.messagingApi.MessagingApiClient({
     channelAccessToken:
@@ -304,6 +306,13 @@ export async function handleEvent(event) {
       )
       VALUES (?, ?, ?, ?, ?)
     `);
+
+    await addOrder({
+      groupId: event.source.groupId,
+      customerName: order.customerName,
+      meal: order.meal,
+      menu: order.menu,
+    });
 
     console.log("💾 INSERTING ORDER");
     
