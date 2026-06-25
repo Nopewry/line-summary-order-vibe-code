@@ -1,6 +1,12 @@
 import db from "./db.js";
 import { parseOrders } from "./parser.js";
 
+const client =
+  new line.messagingApi.MessagingApiClient({
+    channelAccessToken:
+      process.env.CHANNEL_ACCESS_TOKEN,
+  });
+
 export async function handleEvent(event) {
   console.log("🤖 handleEvent called");
   console.log("TEXT =", event.message?.text);
@@ -58,8 +64,8 @@ export async function handleEvent(event) {
     }
 
     const orders = parseOrders(text);
-    console.log("📋 PARSED ORDERS");
-    console.log(orders);
+    // console.log("📋 PARSED ORDERS");
+    // console.log(orders);
 
     if (orders.length === 0) return;
 
