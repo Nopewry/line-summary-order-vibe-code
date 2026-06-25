@@ -309,9 +309,9 @@ export async function handleEvent(event) {
 
     await addOrder({
       groupId: event.source.groupId,
-      customerName: order.customerName,
-      meal: order.meal,
-      menu: order.menu,
+      customerName: orders.customerName,
+      meal: orders.meal,
+      menu: orders.menu,
     });
 
     console.log("💾 INSERTING ORDER");
