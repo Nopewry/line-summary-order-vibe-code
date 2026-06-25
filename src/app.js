@@ -60,6 +60,14 @@ app.post("/webhook", middleware, async (req, res) => {
     JSON.stringify(req.body, null, 2)
   );
 
+  for (const event of req.body.events) {
+    console.log("BEFORE handleEvent");
+
+    await handleEvent(event);
+
+    console.log("AFTER handleEvent");
+  }
+
   return res.sendStatus(200);
 });
 

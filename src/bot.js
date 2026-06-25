@@ -2,6 +2,8 @@ import db from "./db.js";
 import { parseOrders } from "./parser.js";
 
 export async function handleEvent(event) {
+  console.log("🤖 handleEvent called");
+  console.log("TEXT =", event.message?.text);
   try {
     if (event.type !== "message") return;
 
@@ -12,6 +14,8 @@ export async function handleEvent(event) {
     const text = event.message.text;
 
     const orders = parseOrders(text);
+    console.log("📋 PARSED ORDERS");
+    console.log(orders);
 
     if (orders.length === 0) return;
 
@@ -27,7 +31,10 @@ export async function handleEvent(event) {
       VALUES (?, ?, ?, ?, ?)
     `);
 
+
+    console.log("💾 INSERTING ORDER");
     for (const order of orders) {
+      console.log(order);
       insertStmt.run(
         event.source.groupId,
         order.customerName,
@@ -36,6 +43,7 @@ export async function handleEvent(event) {
         order.menu
       );
     }
+    console.log("✅ DB INSERT SUCCESS");
   } catch (err) {
     console.error("BOT ERROR:", err);
   }
