@@ -64,6 +64,52 @@ export async function handleEvent(event) {
       return;
     }
 
+    const cancelMatch = text.match(
+      /^(.+?)\s*\|\s*ยกเลิก$/i
+    );
+
+    if (cancelMatch) {
+      const customerName =
+        cancelMatch[1].trim();
+
+      const result = db.prepare(`
+        DELETE FROM orders
+        WHERE id = (
+          SELECT id
+          FROM orders
+          WHERE customer_name = ?
+          ORDER BY id DESC
+          LIMIT 1
+        )
+      `).run(customerName);
+
+      if (result.changes > 0) {
+        await client.replyMessage({
+          replyToken: event.replyToken,
+          messages: [
+            {
+              type: "text",
+              text:
+                `✅ ยกเลิกออเดอร์ของ ${customerName} แล้ว`
+            }
+          ]
+        });
+      } else {
+        await client.replyMessage({
+          replyToken: event.replyToken,
+          messages: [
+            {
+              type: "text",
+              text:
+                `❌ ไม่พบออเดอร์ของ ${customerName}`
+            }
+          ]
+        });
+      }
+
+      return;
+    }
+
     const orders = parseOrders(text);
     // console.log("📋 PARSED ORDERS");
     // console.log(orders);
