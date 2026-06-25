@@ -214,7 +214,7 @@ export async function handleEvent(event) {
     }
 
     const editMatch = text.match(
-      /^แก้\s*\/\s*(.+?)\s*\/\s*(\d+)\s*\/\s*(.+?)\s*\/\s*(.+?)\s*\/\s*(.+)$/i
+      /^แก้\s*\/\s*(.+?)\s*\/\s*(\d+)\s*\/\s*(.+?)\s*\/\s*(.+)$/i
     );
 
     if (editMatch) {
@@ -227,11 +227,10 @@ export async function handleEvent(event) {
       const meal =
         editMatch[3].trim();
 
-      const orderType =
-        editMatch[4].trim();
+      const orderType = "-";
 
       const menu =
-        editMatch[5].trim();
+        editMatch[4].trim();
 
       const orders = db.prepare(`
         SELECT *
@@ -307,9 +306,25 @@ export async function handleEvent(event) {
     `);
 
     console.log("💾 INSERTING ORDER");
+    
+    const validMeals = ["เช้า", "กลางวัน", "เย็น"];
 
     for (const order of orders) {
       console.log(order);
+
+      if (!validMeals.includes(order.meal)) {
+        await client.replyMessage({
+          replyToken: event.replyToken,
+          messages: [
+            {
+              type: "text",
+              text: `❌ ช่วงเวลาไม่ถูกต้อง: ${order.meal}\nใช้ได้แค่: เช้า / กลางวัน / เย็น`
+            }
+          ]
+        });
+
+        return; // หรือ break แล้วแต่ behavior ที่ต้องการ
+      }
 
       insertStmt.run(
         event.source.groupId,
