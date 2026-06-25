@@ -157,6 +157,63 @@ export async function handleEvent(event) {
       return;
     }
 
+    const deleteMatch = text.match(
+      /^ลบ\s*\|\s*(.+?)\s*\|\s*(\d+)$/i
+    );
+
+    if (deleteMatch) {
+      const customerName =
+        deleteMatch[1].trim();
+
+      const orderIndex =
+        Number(deleteMatch[2]);
+
+      const orders = db.prepare(`
+        SELECT *
+        FROM orders
+        WHERE customer_name = ?
+        ORDER BY id
+      `).all(customerName);
+
+      if (
+        orderIndex < 1 ||
+        orderIndex > orders.length
+      ) {
+        await client.replyMessage({
+          replyToken: event.replyToken,
+          messages: [
+            {
+              type: "text",
+              text: "❌ ลำดับไม่ถูกต้อง"
+            }
+          ]
+        });
+
+        return;
+      }
+
+      const targetOrder =
+        orders[orderIndex - 1];
+
+      db.prepare(`
+        DELETE FROM orders
+        WHERE id = ?
+      `).run(targetOrder.id);
+
+      await client.replyMessage({
+        replyToken: event.replyToken,
+        messages: [
+          {
+            type: "text",
+            text:
+              `✅ ลบรายการ ${orderIndex} แล้ว`
+          }
+        ]
+      });
+
+      return;
+    }
+
     const orders = parseOrders(text);
     // console.log("📋 PARSED ORDERS");
     // console.log(orders);

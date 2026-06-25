@@ -5,7 +5,7 @@ export function generateSummary(orders) {
     `📦 Order ของวันพรุ่งนี้\n\n`;
 
   for (const meal of meals) {
-    text += `🍽 ${meal}\n\n`;
+    text += `*********************🍽 ${meal}*********************\n\n`;
 
     const riceOrders = orders.filter(
       o =>
