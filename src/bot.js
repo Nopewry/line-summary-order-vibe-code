@@ -214,6 +214,81 @@ export async function handleEvent(event) {
       return;
     }
 
+    const editMatch = text.match(
+      /^แก้\s*\|\s*(.+?)\s*\|\s*(\d+)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*(.+)$/i
+    );
+
+    if (editMatch) {
+      const customerName =
+        editMatch[1].trim();
+
+      const orderIndex =
+        Number(editMatch[2]);
+
+      const meal =
+        editMatch[3].trim();
+
+      const orderType =
+        editMatch[4].trim();
+
+      const menu =
+        editMatch[5].trim();
+
+      const orders = db.prepare(`
+        SELECT *
+        FROM orders
+        WHERE customer_name = ?
+        ORDER BY id
+      `).all(customerName);
+
+      if (
+        orderIndex < 1 ||
+        orderIndex > orders.length
+      ) {
+        await client.replyMessage({
+          replyToken: event.replyToken,
+          messages: [
+            {
+              type: "text",
+              text: "❌ ลำดับไม่ถูกต้อง"
+            }
+          ]
+        });
+
+        return;
+      }
+
+      const targetOrder =
+        orders[orderIndex - 1];
+
+      db.prepare(`
+        UPDATE orders
+        SET
+          meal = ?,
+          order_type = ?,
+          menu = ?
+        WHERE id = ?
+      `).run(
+        meal,
+        orderType,
+        menu,
+        targetOrder.id
+      );
+
+      await client.replyMessage({
+        replyToken: event.replyToken,
+        messages: [
+          {
+            type: "text",
+            text:
+              `✅ แก้ไขรายการ ${orderIndex} แล้ว`
+          }
+        ]
+      });
+
+      return;
+    }
+
     const orders = parseOrders(text);
     // console.log("📋 PARSED ORDERS");
     // console.log(orders);
