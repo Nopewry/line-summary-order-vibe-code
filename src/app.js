@@ -24,7 +24,6 @@ const client = new line.messagingApi.MessagingApiClient({
 
 const middleware = line.middleware(config);
 
-let latestGroupId = null;
 
 app.post("/test", (req, res) => {
   console.log("TEST HIT");
@@ -45,7 +44,7 @@ app.post("/webhook", middleware, async (req, res) => {
   return res.sendStatus(200);
 });
 
-startCron(client, () => latestGroupId);
+startCron(client);
 
 app.get("/", (_, res) => {
   res.send("OK");
