@@ -5,6 +5,9 @@ import { generateSummary } from "./summary.js";
 
 import { addOrder } from "./sheet.js";
 
+console.log(process.env.SPREADSHEET_ID);
+
+
 const client =
   new line.messagingApi.MessagingApiClient({
     channelAccessToken:

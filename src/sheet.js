@@ -1,6 +1,11 @@
 import { GoogleSpreadsheet } from "google-spreadsheet";
 import { JWT } from "google-auth-library";
 
+console.log(
+  "SHEET ID =",
+  process.env.SPREADSHEET_ID
+);
+
 const serviceAccount = JSON.parse(
   process.env.GOOGLE_SERVICE_ACCOUNT
 );
@@ -19,6 +24,7 @@ const doc = new GoogleSpreadsheet(
 );
 
 export async function addOrder(order) {
+  console.log("ADD ORDER =", order);
   await doc.loadInfo();
 
   const sheet = doc.sheetsByIndex[0];
