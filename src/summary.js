@@ -7,7 +7,7 @@ export function generateSummary(orders) {
   for (const meal of meals) {
     text += `*********************\n🍽 ${meal}\n*********************\n\n`;
 
-    const orders = orders.filter(
+    const mealOrders = orders.filter(
       o =>
         o.meal === meal
     );
