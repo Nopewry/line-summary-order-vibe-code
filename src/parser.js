@@ -7,7 +7,7 @@ export function parseOrders(text) {
   const orders = [];
 
   for (const line of lines) {
-    const parts = line.split("|").map(x => x.trim());
+    const parts = line.split("-").map(x => x.trim());
 
     if (parts.length !== 4) continue;
 
