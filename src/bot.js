@@ -103,6 +103,60 @@ export async function handleEvent(event) {
       return;
     }
 
+    const viewMatch = text.match(
+      /^(.+?)\s*\|\s*ดู$/i
+    );
+
+    if (viewMatch) {
+      const customerName =
+        viewMatch[1].trim();
+
+      const orders = db.prepare(`
+        SELECT *
+        FROM orders
+        WHERE customer_name = ?
+        ORDER BY id
+      `).all(customerName);
+
+      if (orders.length === 0) {
+        await client.replyMessage({
+          replyToken: event.replyToken,
+          messages: [
+            {
+              type: "text",
+              text:
+                `❌ ไม่พบออเดอร์ของ ${customerName}`
+            }
+          ]
+        });
+
+        return;
+      }
+
+      let text =
+        `📋 ออเดอร์ของ ${customerName}\n\n`;
+
+      orders.forEach((order, index) => {
+        text +=
+          `${index + 1}. ` +
+          `${order.meal} | ` +
+          `${order.order_type} | ` +
+          `${order.menu}\n`;
+      });
+
+      await client.replyMessage({
+        replyToken: event.replyToken,
+        messages: [
+          {
+            type: "text",
+            text
+          }
+        ]
+      });
+
+      return;
+    }
+
     const orders = parseOrders(text);
     // console.log("📋 PARSED ORDERS");
     // console.log(orders);
@@ -121,19 +175,10 @@ export async function handleEvent(event) {
       VALUES (?, ?, ?, ?, ?)
     `);
 
-
     console.log("💾 INSERTING ORDER");
+
     for (const order of orders) {
       console.log(order);
-
-        db.prepare(`
-          DELETE FROM orders
-          WHERE customer_name = ?
-          AND meal = ?
-        `).run(
-          order.customerName,
-          order.meal
-        );
 
       insertStmt.run(
         event.source.groupId,
