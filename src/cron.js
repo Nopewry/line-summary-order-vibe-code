@@ -7,7 +7,7 @@ export function startCron(client) {
   console.log("📤 SEND TO", groupId);
   console.log("🕗 CRON STARTING");
   cron.schedule(
-    "* * * * *",
+    "0 20 * * *",
     async () => {
       console.log("🕗 CRON RUNNING");
       const orders = db
