@@ -1,6 +1,7 @@
 import db from "./db.js";
 import { parseOrders } from "./parser.js";
 import * as line from "@line/bot-sdk";
+import { generateSummary } from "./summary.js";
 
 const client =
   new line.messagingApi.MessagingApiClient({
@@ -41,15 +42,7 @@ export async function handleEvent(event) {
         return;
       }
 
-      let summary = "📋 สรุปออเดอร์\n\n";
-
-      for (const order of orders) {
-        summary +=
-          `${order.customer_name} | ` +
-          `${order.meal} | ` +
-          `${order.order_type} | ` +
-          `${order.menu}\n`;
-      }
+      const summary = generateSummary(orders);
 
       await client.replyMessage({
         replyToken: event.replyToken,
