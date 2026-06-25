@@ -13,6 +13,50 @@ export async function handleEvent(event) {
 
     const text = event.message.text;
 
+    if (text === "#สรุป") {
+      const orders = db
+        .prepare(
+          "SELECT * FROM orders ORDER BY meal, order_type"
+        )
+        .all();
+
+      if (orders.length === 0) {
+        await client.replyMessage({
+          replyToken: event.replyToken,
+          messages: [
+            {
+              type: "text",
+              text: "ยังไม่มีออเดอร์",
+            },
+          ],
+        });
+
+        return;
+      }
+
+      let summary = "📋 สรุปออเดอร์\n\n";
+
+      for (const order of orders) {
+        summary +=
+          `${order.customer_name} | ` +
+          `${order.meal} | ` +
+          `${order.order_type} | ` +
+          `${order.menu}\n`;
+      }
+
+      await client.replyMessage({
+        replyToken: event.replyToken,
+        messages: [
+          {
+            type: "text",
+            text: summary,
+          },
+        ],
+      });
+
+      return;
+    }
+
     const orders = parseOrders(text);
     console.log("📋 PARSED ORDERS");
     console.log(orders);
@@ -44,12 +88,12 @@ export async function handleEvent(event) {
       );
     }
 
-    const rows = db
-    .prepare("SELECT * FROM orders")
-    .all();
+    // const rows = db
+    // .prepare("SELECT * FROM orders")
+    // .all();
 
-    console.log("📦 ROWS IN DB");
-    console.log(rows);
+    // console.log("📦 ROWS IN DB");
+    // console.log(rows);
 
     console.log("✅ DB INSERT SUCCESS");
   } catch (err) {
