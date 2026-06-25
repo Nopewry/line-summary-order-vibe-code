@@ -20,6 +20,20 @@ export function startCron(client) {
         )
         .all();
 
+      if (orders.length === 0) {
+        await client.replyMessage({
+          replyToken: event.replyToken,
+          messages: [
+            {
+              type: "text",
+              text: "ยังไม่มีออเดอร์",
+            },
+          ],
+        });
+
+        return;
+      }
+
       const text = generateSummary(orders);
 
       console.log("📤 PUSH MESSAGE");

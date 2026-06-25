@@ -125,6 +125,16 @@ export async function handleEvent(event) {
     console.log("💾 INSERTING ORDER");
     for (const order of orders) {
       console.log(order);
+
+        db.prepare(`
+          DELETE FROM orders
+          WHERE customer_name = ?
+          AND meal = ?
+        `).run(
+          order.customerName,
+          order.meal
+        );
+
       insertStmt.run(
         event.source.groupId,
         order.customerName,
