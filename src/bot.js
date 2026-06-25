@@ -1,5 +1,6 @@
 import db from "./db.js";
 import { parseOrders } from "./parser.js";
+import * as line from "@line/bot-sdk";
 
 const client =
   new line.messagingApi.MessagingApiClient({
