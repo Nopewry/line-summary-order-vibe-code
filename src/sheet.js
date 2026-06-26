@@ -37,3 +37,24 @@ export async function addOrder(order) {
     menu: order.menu,
   });
 }
+
+export async function getRows() {
+  await doc.loadInfo();
+
+  const sheet = doc.sheetsByIndex[0];
+
+  return await sheet.getRows();
+}
+
+export async function getOrders() {
+  const rows = await getRows();
+
+  return rows.map(row => ({
+    row,
+    group_id: row.get("group_id"),
+    customer_name: row.get("customer_name"),
+    meal: row.get("meal"),
+    menu: row.get("menu"),
+    timestamp: row.get("timestamp"),
+  }));
+}

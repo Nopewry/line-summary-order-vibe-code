@@ -4,6 +4,7 @@ import * as line from "@line/bot-sdk";
 import { generateSummary } from "./summary.js";
 
 import { addOrder } from "./sheet.js";
+import { getOrders } from "./sheet.js";
 
 console.log(process.env.SPREADSHEET_ID);
 
@@ -27,13 +28,20 @@ export async function handleEvent(event) {
     const text = event.message.text;
 
     if (text === "#สรุป") {
-      const orders = db
-        .prepare(
-          "SELECT * FROM orders ORDER BY meal, order_type"
-        )
-        .all();
+      // const orders = db
+      //   .prepare(
+      //     "SELECT * FROM orders ORDER BY meal, order_type"
+      //   )
+      //   .all();
 
-      if (orders.length === 0) {
+      const orders = await getOrders();
+
+      const groupOrders = orders.filter(
+        order =>
+          order.group_id === event.source.groupId
+      );
+
+      if (groupOrders.length === 0) {
         await client.replyMessage({
           replyToken: event.replyToken,
           messages: [
@@ -47,7 +55,7 @@ export async function handleEvent(event) {
         return;
       }
 
-      const summary = generateSummary(orders);
+      const summary = generateSummary(groupOrders);
 
       await client.replyMessage({
         replyToken: event.replyToken,
