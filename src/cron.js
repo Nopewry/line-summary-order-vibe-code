@@ -1,6 +1,6 @@
 import cron from "node-cron";
-import db from "./db.js";
 import { generateSummary } from "./summary.js";
+import { getOrders } from "./sheet.js";
 
 export function startCron(client) {
   const groupId = process.env.GROUP_ID;
@@ -10,27 +10,10 @@ export function startCron(client) {
     "0 22 * * *",
     async () => {
       console.log("🕗 CRON RUNNING");
-      const orders = db
-        .prepare(
-          `
-          SELECT *
-          FROM orders
-          ORDER BY meal, order_type, menu
-        `
-        )
-        .all();
+      const orders = await getOrders();
 
       if (orders.length === 0) {
-        await client.replyMessage({
-          replyToken: event.replyToken,
-          messages: [
-            {
-              type: "text",
-              text: "ยังไม่มีออเดอร์",
-            },
-          ],
-        });
-
+        console.log("No orders");
         return;
       }
 
@@ -54,13 +37,6 @@ export function startCron(client) {
       } catch (err) {
         console.error("❌ PUSH ERROR", err);
       }
-
-      db.prepare("DELETE FROM orders").run();
-      const rows = db
-      .prepare("SELECT * FROM orders")
-      .all();
-
-      console.log(rows);
     },
     {
       timezone: "Asia/Bangkok"

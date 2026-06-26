@@ -1,4 +1,3 @@
-import db from "./db.js";
 import { parseOrders } from "./parser.js";
 import * as line from "@line/bot-sdk";
 import { generateSummary } from "./summary.js";
@@ -28,11 +27,6 @@ export async function handleEvent(event) {
     const text = event.message.text;
 
     if (text === "#สรุป") {
-      // const orders = db
-      //   .prepare(
-      //     "SELECT * FROM orders ORDER BY meal, order_type"
-      //   )
-      //   .all();
 
       const orders = await getOrders();
 
@@ -66,52 +60,6 @@ export async function handleEvent(event) {
           },
         ],
       });
-
-      return;
-    }
-
-    const cancelMatch = text.match(
-      /^(.+?)\s*\/\s*ยกเลิก$/i
-    );
-
-    if (cancelMatch) {
-      const customerName =
-        cancelMatch[1].trim();
-
-      const result = db.prepare(`
-        DELETE FROM orders
-        WHERE id = (
-          SELECT id
-          FROM orders
-          WHERE customer_name = ?
-          ORDER BY id DESC
-          LIMIT 1
-        )
-      `).run(customerName);
-
-      if (result.changes > 0) {
-        await client.replyMessage({
-          replyToken: event.replyToken,
-          messages: [
-            {
-              type: "text",
-              text:
-                `✅ ยกเลิกออเดอร์ของ ${customerName} แล้ว`
-            }
-          ]
-        });
-      } else {
-        await client.replyMessage({
-          replyToken: event.replyToken,
-          messages: [
-            {
-              type: "text",
-              text:
-                `❌ ไม่พบออเดอร์ของ ${customerName}`
-            }
-          ]
-        });
-      }
 
       return;
     }
@@ -207,11 +155,6 @@ export async function handleEvent(event) {
       const targetOrder =
         orders[orderIndex - 1];
 
-      // db.prepare(`
-      //   DELETE FROM orders
-      //   WHERE id = ?
-      // `).run(targetOrder.id);
-
       await targetOrder.row.delete();
 
       await client.replyMessage({
@@ -271,20 +214,6 @@ export async function handleEvent(event) {
 
       const targetOrder = orders[orderIndex - 1];
 
-      // db.prepare(`
-      //   UPDATE orders
-      //   SET
-      //     meal = ?,
-      //     order_type = ?,
-      //     menu = ?
-      //   WHERE id = ?
-      // `).run(
-      //   meal,
-      //   orderType,
-      //   menu,
-      //   targetOrder.id
-      // );
-
       targetOrder.row.set("meal", meal);
       targetOrder.row.set("menu", menu);
 
@@ -310,18 +239,6 @@ export async function handleEvent(event) {
 
     if (orders.length === 0) return;
 
-    const insertStmt = db.prepare(`
-      INSERT INTO orders
-      (
-        group_id,
-        customer_name,
-        meal,
-        order_type,
-        menu
-      )
-      VALUES (?, ?, ?, ?, ?)
-    `);
-
     console.log("💾 INSERTING ORDER");
     
     const validMeals = ["เช้า", "กลางวัน", "เย็น"];
@@ -343,14 +260,6 @@ export async function handleEvent(event) {
         return; // หรือ break แล้วแต่ behavior ที่ต้องการ
       }
 
-      insertStmt.run(
-        event.source.groupId,
-        order.customerName,
-        order.meal,
-        "-",
-        order.menu
-      );
-
         await addOrder({
           groupId: event.source.groupId,
           customerName: order.customerName,
@@ -359,14 +268,6 @@ export async function handleEvent(event) {
         });
     }
 
-    // const rows = db
-    // .prepare("SELECT * FROM orders")
-    // .all();
-
-    // console.log("📦 ROWS IN DB");
-    // console.log(rows);
-
-    console.log("✅ DB INSERT SUCCESS");
   } catch (err) {
     console.error("BOT ERROR:", err);
   }
