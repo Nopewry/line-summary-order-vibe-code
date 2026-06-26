@@ -242,17 +242,15 @@ export async function handleEvent(event) {
       const meal =
         editMatch[3].trim();
 
-      const orderType = "-";
-
       const menu =
         editMatch[4].trim();
 
-      const orders = db.prepare(`
-        SELECT *
-        FROM orders
-        WHERE customer_name = ?
-        ORDER BY id
-      `).all(customerName);
+      const orders = (await getOrders())
+      .filter(
+        order =>
+          order.group_id === event.source.groupId &&
+          order.customer_name === customerName
+      );
 
       if (
         orderIndex < 1 ||
@@ -271,22 +269,26 @@ export async function handleEvent(event) {
         return;
       }
 
-      const targetOrder =
-        orders[orderIndex - 1];
+      const targetOrder = orders[orderIndex - 1];
 
-      db.prepare(`
-        UPDATE orders
-        SET
-          meal = ?,
-          order_type = ?,
-          menu = ?
-        WHERE id = ?
-      `).run(
-        meal,
-        orderType,
-        menu,
-        targetOrder.id
-      );
+      // db.prepare(`
+      //   UPDATE orders
+      //   SET
+      //     meal = ?,
+      //     order_type = ?,
+      //     menu = ?
+      //   WHERE id = ?
+      // `).run(
+      //   meal,
+      //   orderType,
+      //   menu,
+      //   targetOrder.id
+      // );
+
+      targetOrder.row.set("meal", meal);
+      targetOrder.row.set("menu", menu);
+
+      await targetOrder.row.save();
 
       await client.replyMessage({
         replyToken: event.replyToken,
