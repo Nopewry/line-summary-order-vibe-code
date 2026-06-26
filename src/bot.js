@@ -5,6 +5,8 @@ import { generateSummary } from "./summary.js";
 import { addOrder } from "./sheet.js";
 import { getOrders } from "./sheet.js";
 
+import { getToday } from "./date.js";
+
 console.log(process.env.SPREADSHEET_ID);
 
 
@@ -30,9 +32,12 @@ export async function handleEvent(event) {
 
       const orders = await getOrders();
 
+      const today = getToday();
+
       const groupOrders = orders.filter(
         order =>
-          order.group_id === event.source.groupId
+          order.group_id === event.source.groupId &&
+          order.order_date === today
       );
 
       if (groupOrders.length === 0) {
