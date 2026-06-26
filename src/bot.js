@@ -180,12 +180,12 @@ export async function handleEvent(event) {
       const orderIndex =
         Number(deleteMatch[2]);
 
-      const orders = db.prepare(`
-        SELECT *
-        FROM orders
-        WHERE customer_name = ?
-        ORDER BY id
-      `).all(customerName);
+      const orders = (await getOrders())
+      .filter(
+        order =>
+          order.group_id === event.source.groupId &&
+          order.customer_name === customerName
+      );
 
       if (
         orderIndex < 1 ||
@@ -207,10 +207,12 @@ export async function handleEvent(event) {
       const targetOrder =
         orders[orderIndex - 1];
 
-      db.prepare(`
-        DELETE FROM orders
-        WHERE id = ?
-      `).run(targetOrder.id);
+      // db.prepare(`
+      //   DELETE FROM orders
+      //   WHERE id = ?
+      // `).run(targetOrder.id);
+
+      await targetOrder.row.delete();
 
       await client.replyMessage({
         replyToken: event.replyToken,
