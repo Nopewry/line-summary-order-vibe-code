@@ -265,6 +265,7 @@ export async function handleEvent(event) {
           customerName: order.customerName,
           meal: order.meal,
           menu: order.menu,
+          order_date: order.orderDate,
         });
     }
 

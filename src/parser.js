@@ -9,12 +9,43 @@ export function parseOrders(text) {
   for (const line of lines) {
     const parts = line.split("/").map(x => x.trim());
 
-    if (parts.length !== 3) continue;
+    let customerName;
+    let meal;
+    let menu;
+
+    const orderDate = new Date();
+
+    if (parts.length === 3) {
+      customerName = parts[0];
+      meal = parts[1];
+      menu = parts[2];
+    }
+
+    else if (
+      parts.length === 4 &&
+      parts[0] === "พน."
+    ) {
+      orderDate.setDate(
+        orderDate.getDate() + 1
+      );
+
+      customerName = parts[1];
+      meal = parts[2];
+      menu = parts[3];
+    }
+
+    else {
+      continue;
+    }
 
     orders.push({
-      customerName: parts[0],
-      meal: parts[1],
-      menu: parts[2]
+      customerName,
+      meal,
+      menu,
+      orderDate:
+        orderDate
+          .toISOString()
+          .slice(0, 10)
     });
   }
 

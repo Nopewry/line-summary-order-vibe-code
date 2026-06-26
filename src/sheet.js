@@ -35,6 +35,7 @@ export async function addOrder(order) {
     customer_name: order.customerName,
     meal: order.meal,
     menu: order.menu,
+    order_date: order.orderDate,
   });
 }
 
@@ -55,6 +56,7 @@ export async function getOrders() {
     customer_name: row.get("customer_name"),
     meal: row.get("meal"),
     menu: row.get("menu"),
+    order_date: row.get("order_date"),
     timestamp: row.get("timestamp"),
   }));
 }
