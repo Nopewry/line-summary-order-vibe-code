@@ -124,12 +124,12 @@ export async function handleEvent(event) {
       const customerName =
         viewMatch[1].trim();
 
-      const orders = db.prepare(`
-        SELECT *
-        FROM orders
-        WHERE customer_name = ?
-        ORDER BY id
-      `).all(customerName);
+      const orders = (await getOrders())
+        .filter(
+          order =>
+            order.group_id === event.source.groupId &&
+            order.customer_name === customerName
+        );
 
       if (orders.length === 0) {
         await client.replyMessage({
