@@ -5,7 +5,7 @@ import { getTomorrow } from "./date.js";
 
 
 export function startCron(client) {
-  const groupId = process.env.GROUP_ID;
+  const groupId = event.source.groupId;
   console.log("📤 SEND TO", groupId);
   console.log("🕗 CRON STARTING");
   cron.schedule(
