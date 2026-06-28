@@ -16,10 +16,10 @@ export function generateSummary(orders, targetDate) {
   const meals = ["เช้า", "กลางวัน", "เย็น"];
 
   let text =
-  `📦 Orderของ${title} (${thaiDate})\n\n`;
+  `📦 ออเดอร์ของ${title} (${thaiDate})\n`;
 
   for (const meal of meals) {
-    text += `*********************\n🍽 ${meal}\n*********************\n`;
+    text += `*********************\n🍽 ${meal}\n`;
 
     const mealOrders = orders.filter(
       o =>

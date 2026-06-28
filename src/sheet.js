@@ -1,6 +1,6 @@
 import { GoogleSpreadsheet } from "google-spreadsheet";
 import { JWT } from "google-auth-library";
-import { getToday } from "./date.js";
+import { getDateBefore } from "./date.js";
 
 console.log(
   "SHEET ID =",
@@ -69,10 +69,10 @@ export async function deleteOldOrders() {
 
   const rows = await sheet.getRows();
 
-  const today = getToday();
+  const cutoff = getDateBefore(7);
 
   for (const row of rows) {
-    if (row.get("order_date") < today) {
+    if (row.get("order_date") < cutoff) {
       await row.delete();
     }
   }

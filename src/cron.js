@@ -9,7 +9,7 @@ export function startCron(client) {
   console.log("📤 SEND TO", groupId);
   console.log("🕗 CRON STARTING");
   cron.schedule(
-    "0 22 * * *",
+    "* * * * *",
     async () => {
       console.log("🕗 CRON RUNNING");
       const tomorrow = getTomorrow();
@@ -25,7 +25,7 @@ export function startCron(client) {
         return;
       }
 
-      const text = generateSummary(groupOrders, targetDate);
+      const text = generateSummary(orders, tomorrow);
 
       console.log("📤 PUSH MESSAGE");
       console.log(text);
@@ -42,6 +42,9 @@ export function startCron(client) {
         });
 
         console.log("✅ PUSH SUCCESS");
+        await deleteOldOrders();
+
+        console.log("🗑 OLD ORDERS DELETED");
       } catch (err) {
         console.error("❌ PUSH ERROR", err);
       }
