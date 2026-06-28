@@ -116,17 +116,27 @@ export async function handleEvent(event) {
       return;
     }
 
-    const deleteMatch = text.match(/^ลบ\s*\/\s*(.+?)\s*\/\s*(\d+)$/i);
+    const deleteMatch = text.match(/^(?:(พน\.)\s*\/\s*)?ลบ\s*\/\s*(.+?)\s*\/\s*(\d+)$/i);
 
     if (deleteMatch) {
-      const customerName = deleteMatch[1].trim();
+      const isTomorrow = !!deleteMatch[1];
 
-      const orderIndex = Number(deleteMatch[2]);
+    const customerName =
+      deleteMatch[2].trim();
+
+    const orderIndex =
+      Number(deleteMatch[3]);
+
+    const targetDate =
+      isTomorrow
+        ? getTomorrow()
+        : getToday();
 
       const orders = (await getOrders()).filter(
-        (order) =>
+        order =>
           order.group_id === event.source.groupId &&
-          order.customer_name === customerName,
+          order.customer_name === customerName &&
+          order.order_date === targetDate
       );
 
       if (orderIndex < 1 || orderIndex > orders.length) {
@@ -152,7 +162,7 @@ export async function handleEvent(event) {
         messages: [
           {
             type: "text",
-            text: `✅ ลบรายการ ${orderIndex} แล้ว`,
+            text: `✅ ลบรายการ ${orderIndex} ของ${isTomorrow ? "วันพรุ่งนี้" : "วันนี้"}แล้ว`,
           },
         ],
       });
