@@ -1,8 +1,22 @@
-export function generateSummary(orders) {
+import { getToday } from "./date.js";
+
+export function generateSummary(orders, targetDate) {
+  const today = getToday();
+
+  const thaiDate = targetDate
+    .split("-")
+    .reverse()
+    .join("/");
+
+  const title =
+    targetDate === today
+      ? "วันนี้"
+      : "วันพรุ่งนี้";
+
   const meals = ["เช้า", "กลางวัน", "เย็น"];
 
   let text =
-    `📦 Order ของวันพรุ่งนี้\n\n`;
+  `📦 Orderของ${title} (${thaiDate})\n\n`;
 
   for (const meal of meals) {
     text += `*********************\n🍽 ${meal}\n*********************\n`;

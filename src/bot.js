@@ -49,7 +49,7 @@ export async function handleEvent(event) {
         return;
       }
 
-      const summary = generateSummary(groupOrders);
+      const summary = generateSummary(groupOrders, targetDate);
 
       await client.replyMessage({
         replyToken: event.replyToken,
@@ -162,7 +162,7 @@ export async function handleEvent(event) {
         messages: [
           {
             type: "text",
-            text: `✅ ลบรายการ ${orderIndex} ของ${isTomorrow ? "วันพรุ่งนี้" : "วันนี้"}แล้ว`,
+            text: `✅ ลบรายการที่ ${orderIndex} ของ${isTomorrow ? "วันพรุ่งนี้" : "วันนี้"}แล้ว`,
           },
         ],
       });
@@ -171,22 +171,30 @@ export async function handleEvent(event) {
     }
 
     const editMatch = text.match(
-      /^แก้\s*\/\s*(.+?)\s*\/\s*(\d+)\s*\/\s*(.+?)\s*\/\s*(.+)$/i,
+      /^(?:(พน\.)\s*\/\s*)?แก้\s*\/\s*(.+?)\s*\/\s*(\d+)\s*\/\s*(.+?)\s*\/\s*(.+)$/i,
     );
 
     if (editMatch) {
-      const customerName = editMatch[1].trim();
+      const isTomorrow = !!editMatch[1];
 
-      const orderIndex = Number(editMatch[2]);
+      const customerName = editMatch[2].trim();
 
-      const meal = editMatch[3].trim();
+      const orderIndex = Number(editMatch[3]);
 
-      const menu = editMatch[4].trim();
+      const meal = editMatch[4].trim();
+
+      const menu = editMatch[5].trim();
+
+      const targetDate =
+        isTomorrow
+          ? getTomorrow()
+          : getToday();
 
       const orders = (await getOrders()).filter(
-        (order) =>
+        order =>
           order.group_id === event.source.groupId &&
-          order.customer_name === customerName,
+          order.customer_name === customerName &&
+          order.order_date === targetDate
       );
 
       if (orderIndex < 1 || orderIndex > orders.length) {
@@ -215,7 +223,7 @@ export async function handleEvent(event) {
         messages: [
           {
             type: "text",
-            text: `✅ แก้ไขรายการ ${orderIndex} แล้ว`,
+            text: `✅ แก้ไขรายการ ${orderIndex} ของ${isTomorrow ? "วันพรุ่งนี้" : "วันนี้"}แล้ว`,
           },
         ],
       });

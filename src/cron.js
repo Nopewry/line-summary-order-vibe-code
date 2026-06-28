@@ -25,7 +25,7 @@ export function startCron(client) {
         return;
       }
 
-      const text = generateSummary(orders);
+      const text = generateSummary(groupOrders, targetDate);
 
       console.log("📤 PUSH MESSAGE");
       console.log(text);
