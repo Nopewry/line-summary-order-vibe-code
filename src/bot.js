@@ -2,19 +2,15 @@ import { parseOrders } from "./parser.js";
 import * as line from "@line/bot-sdk";
 import { generateSummary } from "./summary.js";
 
-import { addOrder } from "./sheet.js";
-import { getOrders } from "./sheet.js";
+import { addOrder, getOrders } from "./sheet.js";
 
 import { getToday } from "./date.js";
 
 console.log(process.env.SPREADSHEET_ID);
 
-
-const client =
-  new line.messagingApi.MessagingApiClient({
-    channelAccessToken:
-      process.env.CHANNEL_ACCESS_TOKEN,
-  });
+const client = new line.messagingApi.MessagingApiClient({
+  channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
+});
 
 export async function handleEvent(event) {
   console.log("🤖 handleEvent called");
@@ -28,16 +24,15 @@ export async function handleEvent(event) {
 
     const text = event.message.text;
 
-    if (text === "#สรุป") {
+    if (text === "#สรุป" || text === "พน. / #สรุป") {
+      const targetDate = text === "พน. / #สรุป" ? getTomorrow() : getToday();
 
       const orders = await getOrders();
-
-      const today = getToday();
 
       const groupOrders = orders.filter(
         order =>
           order.group_id === event.source.groupId &&
-          order.order_date === today
+          order.order_date === targetDate
       );
 
       if (groupOrders.length === 0) {
@@ -69,20 +64,24 @@ export async function handleEvent(event) {
       return;
     }
 
-    const viewMatch = text.match(
-      /^(.+?)\s*\/\s*ดู$/i
-    );
+    const viewMatch = text.match(/^(?:(พน\.)\s*\/\s*)?(.+?)\s*\/\s*ดู$/i);
 
     if (viewMatch) {
-      const customerName =
-        viewMatch[1].trim();
+      const isTomorrow = !!viewMatch[1];
 
-      const orders = (await getOrders())
-        .filter(
-          order =>
-            order.group_id === event.source.groupId &&
-            order.customer_name === customerName
-        );
+    const customerName =
+      viewMatch[2].trim();
+
+    const targetDate =
+      isTomorrow
+        ? getTomorrow()
+        : getToday();
+
+      const orders = (await getOrders()).filter(
+        (order) =>
+          order.group_id === event.source.groupId &&
+          order.customer_name === customerName && order.order_date === targetDate,
+      );
 
       if (orders.length === 0) {
         await client.replyMessage({
@@ -90,23 +89,18 @@ export async function handleEvent(event) {
           messages: [
             {
               type: "text",
-              text:
-                `❌ ไม่พบออเดอร์ของ ${customerName}`
-            }
-          ]
+              text: `❌ ไม่พบออเดอร์ของ ${customerName}`,
+            },
+          ],
         });
 
         return;
       }
 
-      let text =
-        `📋 ออเดอร์ของ ${customerName}\n\n`;
+      let text = `📋 ออเดอร์${isTomorrow ? "วันพรุ่งนี้" : "วันนี้"}ของ ${customerName}\n\n`;
 
       orders.forEach((order, index) => {
-        text +=
-          `${index + 1}. ` +
-          `${order.meal} / ` +
-          `${order.menu}\n`;
+        text += `${index + 1}. ` + `${order.meal} / ` + `${order.menu}\n`;
       });
 
       await client.replyMessage({
@@ -114,51 +108,42 @@ export async function handleEvent(event) {
         messages: [
           {
             type: "text",
-            text
-          }
-        ]
+            text,
+          },
+        ],
       });
 
       return;
     }
 
-    const deleteMatch = text.match(
-      /^ลบ\s*\/\s*(.+?)\s*\/\s*(\d+)$/i
-    );
+    const deleteMatch = text.match(/^ลบ\s*\/\s*(.+?)\s*\/\s*(\d+)$/i);
 
     if (deleteMatch) {
-      const customerName =
-        deleteMatch[1].trim();
+      const customerName = deleteMatch[1].trim();
 
-      const orderIndex =
-        Number(deleteMatch[2]);
+      const orderIndex = Number(deleteMatch[2]);
 
-      const orders = (await getOrders())
-      .filter(
-        order =>
+      const orders = (await getOrders()).filter(
+        (order) =>
           order.group_id === event.source.groupId &&
-          order.customer_name === customerName
+          order.customer_name === customerName,
       );
 
-      if (
-        orderIndex < 1 ||
-        orderIndex > orders.length
-      ) {
+      if (orderIndex < 1 || orderIndex > orders.length) {
         await client.replyMessage({
           replyToken: event.replyToken,
           messages: [
             {
               type: "text",
-              text: "❌ ลำดับไม่ถูกต้อง"
-            }
-          ]
+              text: "❌ ลำดับไม่ถูกต้อง",
+            },
+          ],
         });
 
         return;
       }
 
-      const targetOrder =
-        orders[orderIndex - 1];
+      const targetOrder = orders[orderIndex - 1];
 
       await targetOrder.row.delete();
 
@@ -167,51 +152,42 @@ export async function handleEvent(event) {
         messages: [
           {
             type: "text",
-            text:
-              `✅ ลบรายการ ${orderIndex} แล้ว`
-          }
-        ]
+            text: `✅ ลบรายการ ${orderIndex} แล้ว`,
+          },
+        ],
       });
 
       return;
     }
 
     const editMatch = text.match(
-      /^แก้\s*\/\s*(.+?)\s*\/\s*(\d+)\s*\/\s*(.+?)\s*\/\s*(.+)$/i
+      /^แก้\s*\/\s*(.+?)\s*\/\s*(\d+)\s*\/\s*(.+?)\s*\/\s*(.+)$/i,
     );
 
     if (editMatch) {
-      const customerName =
-        editMatch[1].trim();
+      const customerName = editMatch[1].trim();
 
-      const orderIndex =
-        Number(editMatch[2]);
+      const orderIndex = Number(editMatch[2]);
 
-      const meal =
-        editMatch[3].trim();
+      const meal = editMatch[3].trim();
 
-      const menu =
-        editMatch[4].trim();
+      const menu = editMatch[4].trim();
 
-      const orders = (await getOrders())
-      .filter(
-        order =>
+      const orders = (await getOrders()).filter(
+        (order) =>
           order.group_id === event.source.groupId &&
-          order.customer_name === customerName
+          order.customer_name === customerName,
       );
 
-      if (
-        orderIndex < 1 ||
-        orderIndex > orders.length
-      ) {
+      if (orderIndex < 1 || orderIndex > orders.length) {
         await client.replyMessage({
           replyToken: event.replyToken,
           messages: [
             {
               type: "text",
-              text: "❌ ลำดับไม่ถูกต้อง"
-            }
-          ]
+              text: "❌ ลำดับไม่ถูกต้อง",
+            },
+          ],
         });
 
         return;
@@ -229,10 +205,9 @@ export async function handleEvent(event) {
         messages: [
           {
             type: "text",
-            text:
-              `✅ แก้ไขรายการ ${orderIndex} แล้ว`
-          }
-        ]
+            text: `✅ แก้ไขรายการ ${orderIndex} แล้ว`,
+          },
+        ],
       });
 
       return;
@@ -245,7 +220,7 @@ export async function handleEvent(event) {
     if (orders.length === 0) return;
 
     console.log("💾 INSERTING ORDER");
-    
+
     const validMeals = ["เช้า", "กลางวัน", "เย็น"];
 
     for (const order of orders) {
@@ -257,23 +232,22 @@ export async function handleEvent(event) {
           messages: [
             {
               type: "text",
-              text: `❌ ช่วงเวลาไม่ถูกต้อง: ${order.meal}\nใช้ได้แค่: เช้า / กลางวัน / เย็น`
-            }
-          ]
+              text: `❌ ช่วงเวลาไม่ถูกต้อง: ${order.meal}\nใช้ได้แค่: เช้า / กลางวัน / เย็น`,
+            },
+          ],
         });
 
         return; // หรือ break แล้วแต่ behavior ที่ต้องการ
       }
 
-        await addOrder({
-          groupId: event.source.groupId,
-          customerName: order.customerName,
-          meal: order.meal,
-          menu: order.menu,
-          orderDate: order.orderDate,
-        });
+      await addOrder({
+        groupId: event.source.groupId,
+        customerName: order.customerName,
+        meal: order.meal,
+        menu: order.menu,
+        orderDate: order.orderDate,
+      });
     }
-
   } catch (err) {
     console.error("BOT ERROR:", err);
   }

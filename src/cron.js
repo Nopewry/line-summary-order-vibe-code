@@ -1,6 +1,8 @@
 import cron from "node-cron";
 import { generateSummary } from "./summary.js";
-import { getOrders } from "./sheet.js";
+import { getOrders, deleteOldOrders  } from "./sheet.js";
+import { getTomorrow } from "./date.js";
+
 
 export function startCron(client) {
   const groupId = process.env.GROUP_ID;
@@ -10,7 +12,13 @@ export function startCron(client) {
     "0 22 * * *",
     async () => {
       console.log("🕗 CRON RUNNING");
-      const orders = await getOrders();
+      const tomorrow = getTomorrow();
+
+      const orders = (await getOrders()).filter(
+        order =>
+          order.group_id === groupId &&
+          order.order_date === tomorrow
+      );
 
       if (orders.length === 0) {
         console.log("No orders");

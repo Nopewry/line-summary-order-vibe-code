@@ -1,5 +1,6 @@
 import { GoogleSpreadsheet } from "google-spreadsheet";
 import { JWT } from "google-auth-library";
+import { getToday } from "./date.js";
 
 console.log(
   "SHEET ID =",
@@ -59,4 +60,20 @@ export async function getOrders() {
     order_date: row.get("order_date"),
     timestamp: row.get("timestamp"),
   }));
+}
+
+export async function deleteOldOrders() {
+  await doc.loadInfo();
+
+  const sheet = doc.sheetsByIndex[0];
+
+  const rows = await sheet.getRows();
+
+  const today = getToday();
+
+  for (const row of rows) {
+    if (row.get("order_date") < today) {
+      await row.delete();
+    }
+  }
 }
