@@ -5,7 +5,7 @@ import { getTomorrow } from "./date.js";
 
 
 export function startCron(client) {
-  const groupId = event.source.groupId;
+  const groupId = process.env.GROUP_ID;
   console.log("📤 SEND TO", groupId);
   console.log("🕗 CRON STARTING");
   cron.schedule(
@@ -13,6 +13,12 @@ export function startCron(client) {
     async () => {
       console.log("🕗 CRON RUNNING");
       const tomorrow = getTomorrow();
+
+      const allOrders = await getOrders();
+
+      console.log("GROUP_ID =", groupId);
+      console.log("TOMORROW =", tomorrow);
+      console.table(allOrders);
 
       const orders = (await getOrders()).filter(
         order =>
