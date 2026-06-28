@@ -9,16 +9,10 @@ export function startCron(client) {
   console.log("📤 SEND TO", groupId);
   console.log("🕗 CRON STARTING");
   cron.schedule(
-    "* * * * *",
+    "0 22 * * *",
     async () => {
       console.log("🕗 CRON RUNNING");
       const tomorrow = getTomorrow();
-
-      const allOrders = await getOrders();
-
-      console.log("GROUP_ID =", groupId);
-      console.log("TOMORROW =", tomorrow);
-      console.table(allOrders);
 
       const orders = (await getOrders()).filter(
         order =>
