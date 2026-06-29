@@ -30,9 +30,9 @@ export async function handleEvent(event) {
       const orders = await getOrders();
 
       const groupOrders = orders.filter(
-        order =>
+        (order) =>
           order.group_id === event.source.groupId &&
-          order.order_date === targetDate
+          order.order_date === targetDate,
       );
 
       if (groupOrders.length === 0) {
@@ -69,18 +69,15 @@ export async function handleEvent(event) {
     if (viewMatch) {
       const isTomorrow = !!viewMatch[1];
 
-    const customerName =
-      viewMatch[2].trim();
+      const customerName = viewMatch[2].trim();
 
-    const targetDate =
-      isTomorrow
-        ? getTomorrow()
-        : getToday();
+      const targetDate = isTomorrow ? getTomorrow() : getToday();
 
       const orders = (await getOrders()).filter(
         (order) =>
           order.group_id === event.source.groupId &&
-          order.customer_name === customerName && order.order_date === targetDate,
+          order.customer_name === customerName &&
+          order.order_date === targetDate,
       );
 
       if (orders.length === 0) {
@@ -116,27 +113,24 @@ export async function handleEvent(event) {
       return;
     }
 
-    const deleteMatch = text.match(/^(?:(พน\.)\s*\/\s*)?ลบ\s*\/\s*(.+?)\s*\/\s*(\d+)$/i);
+    const deleteMatch = text.match(
+      /^(?:(พน\.)\s*\/\s*)?ลบ\s*\/\s*(.+?)\s*\/\s*(\d+)$/i,
+    );
 
     if (deleteMatch) {
       const isTomorrow = !!deleteMatch[1];
 
-    const customerName =
-      deleteMatch[2].trim();
+      const customerName = deleteMatch[2].trim();
 
-    const orderIndex =
-      Number(deleteMatch[3]);
+      const orderIndex = Number(deleteMatch[3]);
 
-    const targetDate =
-      isTomorrow
-        ? getTomorrow()
-        : getToday();
+      const targetDate = isTomorrow ? getTomorrow() : getToday();
 
       const orders = (await getOrders()).filter(
-        order =>
+        (order) =>
           order.group_id === event.source.groupId &&
           order.customer_name === customerName &&
-          order.order_date === targetDate
+          order.order_date === targetDate,
       );
 
       if (orderIndex < 1 || orderIndex > orders.length) {
@@ -185,16 +179,13 @@ export async function handleEvent(event) {
 
       const menu = editMatch[5].trim();
 
-      const targetDate =
-        isTomorrow
-          ? getTomorrow()
-          : getToday();
+      const targetDate = isTomorrow ? getTomorrow() : getToday();
 
       const orders = (await getOrders()).filter(
-        order =>
+        (order) =>
           order.group_id === event.source.groupId &&
           order.customer_name === customerName &&
-          order.order_date === targetDate
+          order.order_date === targetDate,
       );
 
       if (orderIndex < 1 || orderIndex > orders.length) {
@@ -258,16 +249,6 @@ export async function handleEvent(event) {
         return; // หรือ break แล้วแต่ behavior ที่ต้องการ
       }
 
-      await client.replyMessage({
-        replyToken: event.replyToken,
-        messages: [
-          {
-            type: "text",
-            text: `✅ เพิ่มรายการ: ${order.customerName} ช่วงเวลา ${order.meal} เมนู ${order.menu} เรียบร้อยแล้วครับ`,
-          },
-        ],
-      });
-
       await addOrder({
         groupId: event.source.groupId,
         customerName: order.customerName,
@@ -275,9 +256,25 @@ export async function handleEvent(event) {
         menu: order.menu,
         orderDate: order.orderDate,
       });
+
+      successMessages.push(
+        `✅ ${order.customerName} / ${order.meal} / ${order.menu}`,
+      );
     }
 
-    const helloMatch = text.match(/ตื่นบอท$/i,);
+    await client.replyMessage({
+      replyToken: event.replyToken,
+      messages: [
+        {
+          type: "text",
+          text:
+            "เพิ่มออเดอร์เรียบร้อย\n\n" +
+            successMessages.join("\n"),
+        },
+      ],
+    });
+
+    const helloMatch = text.match(/ตื่นบอท$/i);
 
     if (helloMatch) {
       await client.replyMessage({
@@ -289,8 +286,8 @@ export async function handleEvent(event) {
           },
         ],
       });
+      return;
     }
-
   } catch (err) {
     console.error("BOT ERROR:", err);
   }
