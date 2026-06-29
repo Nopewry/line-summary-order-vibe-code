@@ -222,6 +222,21 @@ export async function handleEvent(event) {
       return;
     }
 
+    const helloMatch = text.match(/ตื่นบอท$/i);
+
+    if (helloMatch) {
+      await client.replyMessage({
+        replyToken: event.replyToken,
+        messages: [
+          {
+            type: "text",
+            text: "กระผมตื่นแล้วครับ พร้อมรับคำสั่งครับผม",
+          },
+        ],
+      });
+      return;
+    }
+
     const orders = parseOrders(text);
     // console.log("📋 PARSED ORDERS");
     // console.log(orders);
@@ -231,6 +246,8 @@ export async function handleEvent(event) {
     console.log("💾 INSERTING ORDER");
 
     const validMeals = ["เช้า", "กลางวัน", "เย็น"];
+
+    const successMessages = [];
 
     for (const order of orders) {
       console.log(order);
@@ -274,20 +291,6 @@ export async function handleEvent(event) {
       ],
     });
 
-    const helloMatch = text.match(/ตื่นบอท$/i);
-
-    if (helloMatch) {
-      await client.replyMessage({
-        replyToken: event.replyToken,
-        messages: [
-          {
-            type: "text",
-            text: "กระผมตื่นแล้วครับ พร้อมรับคำสั่งครับผม",
-          },
-        ],
-      });
-      return;
-    }
   } catch (err) {
     console.error("BOT ERROR:", err);
   }
