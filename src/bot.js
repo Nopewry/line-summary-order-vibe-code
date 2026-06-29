@@ -217,7 +217,7 @@ export async function handleEvent(event) {
         messages: [
           {
             type: "text",
-            text: `✅ แก้ไขรายการที่ ${orderIndex} ของ${customerName} \nจาก ${oldMeal} เป็น ${meal} \nและเมนูจาก ${oldMenu} เป็น ${menu} \nของ${isTomorrow ? "วันพรุ่งนี้" : "วันนี้"}แล้ว`,
+            text: `✅ แก้เมนูที่ ${orderIndex} \n😀ของ ${customerName} \n🌞จาก ${oldMeal} เป็น ${meal} \n🍴และเมนูจาก ${oldMenu} เป็น ${menu} \n🌻ของ${isTomorrow ? "วันพรุ่งนี้" : "วันนี้"}แล้ว`,
           },
         ],
       });
