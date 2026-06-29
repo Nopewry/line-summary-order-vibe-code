@@ -27,7 +27,7 @@ export async function handleEvent(event) {
     if (text === "#สรุป" || text === "พน. / #สรุป") {
       const targetDate = text === "พน. / #สรุป" ? getTomorrow() : getToday();
 
-      const orders = await getOrders();
+      const orders = await await getOrders(event.source.groupId);
 
       const groupOrders = orders.filter(
         (order) =>
@@ -73,7 +73,7 @@ export async function handleEvent(event) {
 
       const targetDate = isTomorrow ? getTomorrow() : getToday();
 
-      const orders = (await getOrders()).filter(
+      const orders = (await await getOrders(event.source.groupId)).filter(
         (order) =>
           order.group_id === event.source.groupId &&
           order.customer_name === customerName &&
@@ -126,7 +126,7 @@ export async function handleEvent(event) {
 
       const targetDate = isTomorrow ? getTomorrow() : getToday();
 
-      const orders = (await getOrders()).filter(
+      const orders = (await await getOrders(event.source.groupId)).filter(
         (order) =>
           order.group_id === event.source.groupId &&
           order.customer_name === customerName &&
@@ -181,7 +181,7 @@ export async function handleEvent(event) {
 
       const targetDate = isTomorrow ? getTomorrow() : getToday();
 
-      const orders = (await getOrders()).filter(
+      const orders = (await await getOrders(event.source.groupId)).filter(
         (order) =>
           order.group_id === event.source.groupId &&
           order.customer_name === customerName &&
@@ -266,7 +266,7 @@ export async function handleEvent(event) {
         return; // หรือ break แล้วแต่ behavior ที่ต้องการ
       }
 
-      await addOrder({
+      await addOrder(event.source.groupId, {
         groupId: event.source.groupId,
         customerName: order.customerName,
         meal: order.meal,
@@ -284,13 +284,10 @@ export async function handleEvent(event) {
       messages: [
         {
           type: "text",
-          text:
-            "เพิ่มออเดอร์เรียบร้อย\n\n" +
-            successMessages.join("\n"),
+          text: "เพิ่มออเดอร์เรียบร้อย\n\n" + successMessages.join("\n"),
         },
       ],
     });
-
   } catch (err) {
     console.error("BOT ERROR:", err);
   }

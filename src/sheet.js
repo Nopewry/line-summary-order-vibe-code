@@ -19,13 +19,22 @@ const auth = new JWT({
   ],
 });
 
-const doc = new GoogleSpreadsheet(
-  process.env.SPREADSHEET_ID,
-  auth
-);
+function getDoc(groupId) {
+  const spreadsheetId =
+    groupId === process.env.GROUP_ID_TEST
+      ? process.env.SPREADSHEET_ID_TEST
+      : process.env.SPREADSHEET_ID_MAIN;
 
-export async function addOrder(order) {
+  return new GoogleSpreadsheet(
+    spreadsheetId,
+    auth
+  );
+}
+
+export async function addOrder(groupId, order) {
   console.log("ADD ORDER =", order);
+  const doc = getDoc(groupId);
+
   await doc.loadInfo();
 
   const sheet = doc.sheetsByIndex[0];
@@ -48,8 +57,13 @@ export async function getRows() {
   return await sheet.getRows();
 }
 
-export async function getOrders() {
-  const rows = await getRows();
+export async function getOrders(groupId) {
+
+  const doc = getDoc(groupId);
+  await doc.loadInfo();
+
+  const sheet = doc.sheetsByIndex[0];
+  const rows = await sheet.getRows();
 
   return rows.map(row => ({
     row,
@@ -62,7 +76,8 @@ export async function getOrders() {
   }));
 }
 
-export async function deleteOldOrders() {
+export async function deleteOldOrders(groupId) {
+  const doc = getDoc(groupId);
   await doc.loadInfo();
 
   const sheet = doc.sheetsByIndex[0];
