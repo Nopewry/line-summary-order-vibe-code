@@ -258,6 +258,16 @@ export async function handleEvent(event) {
         return; // หรือ break แล้วแต่ behavior ที่ต้องการ
       }
 
+      await client.replyMessage({
+        replyToken: event.replyToken,
+        messages: [
+          {
+            type: "text",
+            text: `✅ เพิ่มรายการ: ${order.customerName} ช่วงเวลา ${order.meal} เมนู ${order.menu} เรียบร้อยแล้วครับ`,
+          },
+        ],
+      });
+
       await addOrder({
         groupId: event.source.groupId,
         customerName: order.customerName,
@@ -266,6 +276,21 @@ export async function handleEvent(event) {
         orderDate: order.orderDate,
       });
     }
+
+    const helloMatch = text.match(/ตื่นบอท$/i,);
+
+    if (helloMatch) {
+      await client.replyMessage({
+        replyToken: event.replyToken,
+        messages: [
+          {
+            type: "text",
+            text: "กระผมตื่นแล้วครับ พร้อมรับคำสั่งครับผม",
+          },
+        ],
+      });
+    }
+
   } catch (err) {
     console.error("BOT ERROR:", err);
   }
