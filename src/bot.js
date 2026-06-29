@@ -202,6 +202,9 @@ export async function handleEvent(event) {
         return;
       }
 
+      const oldMeal = orders[orderIndex - 1].meal;
+      const oldMenu = orders[orderIndex - 1].menu;
+
       const targetOrder = orders[orderIndex - 1];
 
       targetOrder.row.set("meal", meal);
@@ -214,7 +217,7 @@ export async function handleEvent(event) {
         messages: [
           {
             type: "text",
-            text: `✅ แก้ไขรายการ ${orderIndex} ของ${isTomorrow ? "วันพรุ่งนี้" : "วันนี้"}แล้ว`,
+            text: `✅ แก้ไขรายการที่ ${orderIndex} ของ${customerName} \nจาก ${oldMeal} เป็น ${meal} \nและเมนูจาก ${oldMenu} เป็น ${menu} \nของ${isTomorrow ? "วันพรุ่งนี้" : "วันนี้"}แล้ว`,
           },
         ],
       });
