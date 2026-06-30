@@ -225,7 +225,10 @@ export async function handleEvent(event) {
       return;
     }
 
-    const helloMatch = text.match(/ตื่นบอท$/i);
+    const lower = text.trim();
+
+    const helloMatch =
+      lower.includes("บอท") && lower.includes("ตื่น") && !lower.includes("ไม่");
 
     if (helloMatch) {
       await client.replyMessage({
